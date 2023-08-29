@@ -6,7 +6,7 @@ setup(
     author="Dan Paulson",
     author_email="danpaulson@gmail.com",
     description="Simple backup/restore to s3 for mysql",
-    version='1.0.0',
+    version='1.0.2',
     install_requires=[
         'boto3',
         'prompt_toolkit',
