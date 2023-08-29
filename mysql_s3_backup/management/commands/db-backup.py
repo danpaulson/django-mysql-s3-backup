@@ -26,7 +26,7 @@ class Command(BaseCommand):
         bucket_name = settings.AWS_BACKUP_BUCKET
         database_name = options['name'] if options['name'] else settings.DATABASES['default']['NAME']
         prefix = f'db-backup-{database_name}.'
-        date_str = datetime.datetime.now().strftime('%d%m%y')
+        date_str = datetime.datetime.now().strftime('%Y-%m-%d')
         object_name = f'{prefix}{date_str}.sql'
 
         db_file_path = '/tmp/db.sql'
@@ -51,7 +51,7 @@ class Command(BaseCommand):
         for obj in objects:
             # Extract the date from the object key
             date_part = obj['Key'].split('.')[1]
-            backup_date = datetime.datetime.strptime(date_part, '%d%m%y')
+            backup_date = datetime.datetime.strptime(date_part, '%Y-%m-%d')
 
             if backup_date < date_threshold:
                 s3.delete_object(Bucket=bucket_name, Key=obj['Key'])
