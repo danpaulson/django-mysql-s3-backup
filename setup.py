@@ -9,5 +9,6 @@ setup(
     version='1.0.0',
     install_requires=[
         'boto3',
+        'prompt_toolkit',
     ]
 )
