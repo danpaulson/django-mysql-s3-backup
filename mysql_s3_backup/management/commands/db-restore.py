@@ -26,6 +26,11 @@ class Command(BaseCommand):
             action='store_true',
             help='Choose the backup from a list.',
         )
+        parser.add_argument(
+            '--no-delete',
+            action='store_true',
+            help='Do not delete the file after the import and use timestamp as file name.'
+        )
 
     def handle(self, *args, **options):
         def size_format(num, suffix='B'):
@@ -45,7 +50,9 @@ class Command(BaseCommand):
         }
         s3 = boto3.client('s3', **s3_kwargs)
 
-        db_file_path = '/tmp/db.sql'
+        db_file_name = 'db.sql'
+        db_file_path = os.path.join(getattr(settings, 'BACKUP_DB_FILE_PATH', '/tmp/'), db_file_name)
+
         bucket_name = settings.AWS_BACKUP_BUCKET
         database_name = options['name'] if options['name'] else settings.DATABASES['default']['NAME']
         prefix = f'db-backup-{database_name}.'
@@ -107,21 +114,30 @@ class Command(BaseCommand):
             years = days // 365  # Simplified, not accounting for leap years
             time_str = f"{years}y old"
 
+        download_new_file = True
+        if options['no_delete']:
+            if os.path.exists(db_file_path):
+                overwrite = input(f"File {db_file_path} already exists. Download new? [Y/N]: ")
+                if overwrite.upper() != 'Y':
+                    download_new_file = False
+
         # DB info
         db_host = settings.DATABASES['default']['HOST']
 
         print('')
-        print(f'Host:     {db_host}')
-        print(f'Database: {database_name}')
-        print(f'Backup:   {object_name}')
-        print(f'          {time_str}')
-        print(f'          {size_format(object_metadata["ContentLength"])}')
+        print(f'Target Host: {db_host}')
+        print(f'Database:    {database_name}')
+        print(f'Backup:      {object_name}')
+        print(f'             {time_str}')
+        print(f'             {size_format(object_metadata["ContentLength"])}')
         print('')
         answer = input('Restore Database from S3? [Y/N]: ')
 
         if answer == 'Y':
-            print('# Downloading DB Dump')
-            s3.download_file(bucket_name, object_name, db_file_path)
+            if download_new_file:
+                print('# Downloading DB Dump')
+                s3.download_file(bucket_name, object_name, db_file_path)
+
             print('# Importing DB Dump')
             os.system('mysql -h{0} -u{1} -p{2} --database={3} < {4}'.format(
                 db_host,
@@ -130,8 +146,10 @@ class Command(BaseCommand):
                 database_name,
                 db_file_path
             ))
-            print('# Removing DB File')
-            os.remove(db_file_path)
+            if not options['no_delete']:
+                print('# Removing DB File')
+                os.remove(db_file_path)
+
 
         else:
             raise CommandError('Aborted.')
