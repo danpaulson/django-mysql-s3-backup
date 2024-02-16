@@ -22,6 +22,12 @@ class Command(BaseCommand):
             default=None  # Default value if not provided.
         )
         parser.add_argument(
+            '-local_db_name',
+            type=str,
+            help='Specify a different database name locally.',
+            default=None  # Default value if not provided.
+        )
+        parser.add_argument(
             '--choose',
             action='store_true',
             help='Choose the backup from a list.',
@@ -123,6 +129,10 @@ class Command(BaseCommand):
 
         # DB info
         db_host = settings.DATABASES['default']['HOST']
+
+        # Local DB Name override
+        if options['local_db_name']:
+            database_name = options['local_db_name']
 
         print('')
         print(f'Target Host: {db_host}')
