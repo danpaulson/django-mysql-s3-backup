@@ -25,7 +25,8 @@ class Command(BaseCommand):
 
         bucket_name = settings.AWS_BACKUP_BUCKET
         database_name = options['name'] if options['name'] else settings.DATABASES['default']['NAME']
-        prefix = f'db-backup-{database_name}.'
+        directory = f'{settings.AWS_BACKUP_DIRECTORY}/' if settings.AWS_BACKUP_DIRECTORY else ''
+        prefix = f'{directory}db-backup-{database_name}.'
         date_str = datetime.datetime.now().strftime('%Y-%m-%d')
         object_name = f'{prefix}{date_str}.sql'
 
@@ -49,6 +50,7 @@ class Command(BaseCommand):
         objects = s3.list_objects_v2(Bucket=bucket_name, Prefix=f"{prefix}")['Contents']
 
         for obj in objects:
+            print(obj)
             # Extract the date from the object key
             date_part = obj['Key'].split('.')[1]
             backup_date = datetime.datetime.strptime(date_part, '%Y-%m-%d')
