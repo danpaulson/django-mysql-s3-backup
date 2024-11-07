@@ -61,7 +61,8 @@ class Command(BaseCommand):
 
         bucket_name = settings.AWS_BACKUP_BUCKET
         database_name = options['name'] if options['name'] else settings.DATABASES['default']['NAME']
-        prefix = f'db-backup-{database_name}.'
+        directory = f'{settings.AWS_BACKUP_DIRECTORY}/' if settings.AWS_BACKUP_DIRECTORY else ''
+        prefix = f'{directory}db-backup-{database_name}.'
         # Get all objects in the bucket with the given prefix
         objects = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
 
