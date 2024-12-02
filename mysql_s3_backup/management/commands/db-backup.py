@@ -35,13 +35,14 @@ class Command(BaseCommand):
         s3 = boto3.client('s3', **s3_kwargs)
 
         logging.info('# Create DB Dump')
-        os.system('mysqldump --single-transaction --skip-comments --quick --complete-insert --lock-tables=false -h{0} -u{1} -p{2} {3} > {4}'.format(
+        os.system('mysqldump --single-transaction --skip-comments --quick --complete-insert --lock-tables=false -h{0} -u{1} -p{2} {3} | sed "1d" > {4}'.format(
             settings.DATABASES['default']['HOST'],
             settings.DATABASES['default']['USER'],
             settings.DATABASES['default']['PASSWORD'],
             database_name,
             db_file_path
         ))
+
         s3.upload_file(db_file_path, bucket_name, object_name)
         os.remove(db_file_path)
 
