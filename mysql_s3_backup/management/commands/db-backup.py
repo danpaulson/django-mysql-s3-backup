@@ -35,7 +35,7 @@ class Command(BaseCommand):
         s3 = boto3.client('s3', **s3_kwargs)
 
         logging.info('# Create DB Dump')
-        os.system('mysqldump --single-transaction --quick --complete-insert --lock-tables=false -h{0} -u{1} -p{2} {3} > {4}'.format(
+        os.system('mysqldump --single-transaction --skip-comments --quick --complete-insert --lock-tables=false -h{0} -u{1} -p{2} {3} > {4}'.format(
             settings.DATABASES['default']['HOST'],
             settings.DATABASES['default']['USER'],
             settings.DATABASES['default']['PASSWORD'],
