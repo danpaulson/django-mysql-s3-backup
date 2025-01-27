@@ -16,6 +16,11 @@ class Command(BaseCommand):
             help='Force run the command even outside of dev.',
         )
         parser.add_argument(
+            '--yes',
+            action='store_true',
+            help='Skip the confirmation prompt.',
+        )
+        parser.add_argument(
             '-name',
             type=str,
             help='Specify a different database name. Defaults to the one in settings.',
@@ -142,25 +147,24 @@ class Command(BaseCommand):
         print(f'             {time_str}')
         print(f'             {size_format(object_metadata["ContentLength"])}')
         print('')
-        answer = input('Restore Database from S3? [Y/N]: ')
+        
+        if not options['yes']:
+            answer = input('Restore Database from S3? [Y/N]: ')
+            if answer != 'Y':
+                raise CommandError('Aborted.')
 
-        if answer == 'Y':
-            if download_new_file:
-                print('# Downloading DB Dump')
-                s3.download_file(bucket_name, object_name, db_file_path)
+        if download_new_file:
+            print('# Downloading DB Dump')
+            s3.download_file(bucket_name, object_name, db_file_path)
 
-            print('# Importing DB Dump')
-            os.system('mysql -h{0} -u{1} -p{2} --database={3} < {4}'.format(
-                db_host,
-                settings.DATABASES['default']['USER'],
-                settings.DATABASES['default']['PASSWORD'],
-                database_name,
-                db_file_path
-            ))
-            if not options['no_delete']:
-                print('# Removing DB File')
-                os.remove(db_file_path)
-
-
-        else:
-            raise CommandError('Aborted.')
+        print('# Importing DB Dump')
+        os.system('mysql -h{0} -u{1} -p{2} --database={3} < {4}'.format(
+            db_host,
+            settings.DATABASES['default']['USER'],
+            settings.DATABASES['default']['PASSWORD'],
+            database_name,
+            db_file_path
+        ))
+        if not options['no_delete']:
+            print('# Removing DB File')
+            os.remove(db_file_path)
